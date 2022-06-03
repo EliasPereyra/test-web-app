@@ -1,0 +1,48 @@
+name: CI2
+env:
+  SCREENER_API_KEY: ${{ secrets.SCREENER_API_KEY}}
+  SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME}}
+  SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY}}
+
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install dependencies
+      run: |
+        cd web-app
+        npm ci
+    - name: Build the app
+      run: |
+        cd web-app
+        npm run build
+    - name: Run component tests
+      run: |
+        cd web-app
+        npm run test
+    - name: Start the app
+      run: | 
+        cd web-app
+        npm start &
+        npx wait-on --timeout 60000
+    - name: Run visual tests
+      run: |
+        cd web-app
+        npm run test:visual
